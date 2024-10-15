@@ -1,0 +1,12 @@
+.mainheader {
+    padding: 1rem;
+    background-color: rgb(240, 240, 240);
+    text-align: center;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.mainheader h1 {
+    margin: 0px;
+    cursor: pointer;
+}

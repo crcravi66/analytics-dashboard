@@ -1,0 +1,158 @@
+import React, { useState, useEffect } from 'react';
+import { useParams } from 'react-router-dom';
+import Header from '../components/Header';
+import Chart from '../components/Chart';
+import { chartData } from '../data/chartData';
+import { supabase } from '../supabase';
+
+function ChartDetail() {
+    const { id } = useParams();
+    const chart = chartData.find(c => c.id === parseInt(id, 10));
+    const [viewTime, setViewTime] = useState(0);
+    const [viewCount, setViewCount] = useState(0);
+    const [distributionData, setDistributionData] = useState([]);
+    const [isLoading, setIsLoading] = useState(true);
+
+    useEffect(() => {
+        if (!chart) return;
+
+        const chartId = parseInt(id, 10);
+
+        const fetchDataAndIncrementViewCount = async () => {
+            setIsLoading(true);
+            try {
+                const { data, error } = await supabase
+                    .from('chart_views')
+                    .select('view_time, view_count')
+                    .eq('chart_id', chartId)
+                    .single();
+
+                if (error) throw error;
+
+                setViewTime(data.view_time);
+                setViewCount(data.view_count);
+
+                const { error: incrementError } = await supabase
+                    .from('chart_views')
+                    .update({ view_count: data.view_count + 1 })
+                    .eq('chart_id', chartId);
+
+                if (incrementError) throw incrementError;
+
+                setViewCount(data.view_count + 1);
+
+                await updateDistributionData();
+
+            } catch (error) {
+                console.error('Error:', error);
+            } finally {
+                setIsLoading(false);
+            }
+        };
+
+        const updateDistributionData = async () => {
+            try {
+                const { data: allData, error: allError } = await supabase
+                    .from('chart_views')
+                    .select('chart_id, view_time')
+                    .order('chart_id');
+
+                if (allError) throw allError;
+
+                const newDistributionData = [
+                    ['Chart', 'View Time'],
+                    ...allData.map(item => [`Chart ${item.chart_id}`, item.view_time])
+                ];
+                setDistributionData(newDistributionData);
+
+                const distributionChart = chartData.find(c => c.id === 5);
+                if (distributionChart) {
+                    distributionChart.data = newDistributionData;
+                }
+            } catch (error) {
+                console.error('Error fetching all view times:', error);
+            }
+        };
+
+        fetchDataAndIncrementViewCount();
+
+        const updateInterval = setInterval(async () => {
+            try {
+                await supabase
+                    .rpc('increment_view_time', { p_chart_id: chartId, p_additional_seconds: 2 });
+
+                const { data, error } = await supabase
+                    .from('chart_views')
+                    .select('view_time, view_count')
+                    .eq('chart_id', chartId)
+                    .single();
+
+                if (error) throw error;
+
+                setViewTime(data.view_time);
+                setViewCount(data.view_count);
+
+                await updateDistributionData();
+
+            } catch (error) {
+                console.error('Error updating data:', error);
+            }
+        }, 2000);
+
+        return () => {
+            clearInterval(updateInterval);
+        };
+    }, [id, chart]);
+
+    if (!chart) {
+        return <div>Chart not found</div>;
+    }
+
+    const formatTime = (seconds) => {
+        const minutes = Math.floor(seconds / 60);
+        const remainingSeconds = seconds % 60;
+        if (minutes > 0) {
+            return `${minutes} minute${minutes !== 1 ? 's' : ''} ${remainingSeconds} second${remainingSeconds !== 1 ? 's' : ''}`;
+        }
+        return `${seconds} second${seconds !== 1 ? 's' : ''}`;
+    };
+
+    const averageTimePerSession = viewCount ? formatTime(Math.round(viewTime / viewCount)) : '0 seconds';
+
+    return (
+        <div>
+            <Header />
+            <div style={{ padding: '1rem' }}>
+                <h2>{chart.title}</h2>
+                {isLoading ? (
+                    <div>Loading chart data...</div>
+                ) : (
+                    <>
+                        <p>Total view time: {formatTime(viewTime)}</p>
+                        <p>View count: {viewCount}</p>
+                        <p>Average session time per viewing: {averageTimePerSession}</p>
+                        <div style={{ height: '500px' }}>
+                            <Chart
+                                data={chart.data}
+                                options={chart.options}
+                                chartType={chart.type}
+                            />
+                        </div>
+                        {chart.id === 5 && distributionData.length > 0 && (
+                            <div style={{ height: '500px', marginTop: '2rem' }}>
+                                <h3>View Time Distribution Across All Charts</h3>
+                                <Chart
+                                    data={distributionData}
+                                    options={chart.options}
+                                    chartType={chart.type}
+                                />
+                            </div>
+                        )}
+                    </>
+                )}
+            </div>
+        </div>
+    );
+}
+
+export default ChartDetail;
