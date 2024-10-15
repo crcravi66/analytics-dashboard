@@ -7,8 +7,8 @@ function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path='/' element={<Home />}></Route>
-        <Route path='/chart/:id' element={<ChartHomePages />}></Route>
+        <Route path='/analytics-dashboard/' element={<Home />}></Route>
+        <Route path='/analytics-dashboard/chart/:id' element={<ChartHomePages />}></Route>
       </Routes>
     </BrowserRouter>
   )

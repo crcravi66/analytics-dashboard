@@ -10,7 +10,7 @@ const ChatGridBoxs = () => {
         <>
             <section className='chart-grid'>
                 {cartTitles.map((data) => (
-                    <Link key={data.id} to={`/chart/${data.id}`} className="chart-link">
+                    <Link key={data.id} to={`/analytics-dashboard/chart/${data.id}`} className="chart-link">
                         <div className="chart-container">
                             <div className="chart-title">{data.title}</div>
                             <div className="main-chat-box">
