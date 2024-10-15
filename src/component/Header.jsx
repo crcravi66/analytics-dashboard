@@ -4,7 +4,7 @@ import './header.css'
 const Header = () => {
     return (
         <header className="mainheader">
-            <h1>J&J Analytics Dashboard</h1>
+            <h1> Analytics Dashboard</h1>
         </header>
     )
 }

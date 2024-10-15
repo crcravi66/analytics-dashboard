@@ -2,6 +2,8 @@ import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import './App.css'
 import Home from './pages/Home'
 import ChartHomePages from './pages/ChartHomePage'
+import supabase from "./config/supabase"
+supabase
 
 function App() {
   return (
